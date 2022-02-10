@@ -1,5 +1,4 @@
 const { Schema, model } = require("mongoose");
-const joi = require("joi");
 const Joi = require("joi");
 const contactSchema = Schema({
   name: {
@@ -16,12 +15,17 @@ const contactSchema = Schema({
     type: Boolean,
     default: false,
   },
+  owner: {
+    type: Schema.Types.ObjectId,
+    ref: "user",
+    required: true,
+  },
 });
 
-const joiContactsShema = joi.object({
-  name: joi.string().required(),
-  email: joi.string().required(),
-  phone: joi.string().required(),
+const joiContactsShema = Joi.object({
+  name: Joi.string().required(),
+  email: Joi.string().required(),
+  phone: Joi.string().required(),
   favorite: Joi.boolean(),
 });
 
