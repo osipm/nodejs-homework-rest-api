@@ -3,6 +3,7 @@ const { User, schemas } = require("../../models/user");
 const CreateError = require("http-errors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const gravatar = require("gravatar");
 
 const router = express.Router();
 
@@ -23,7 +24,8 @@ router.post("/signup", async (req, res, next) => {
     }
     const solt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, solt);
-    await User.create({ email, password: hashPassword });
+    const avatarURL = gravatar.url(email);
+    await User.create({ email, avatarURL, password: hashPassword });
 
     res.status(201).json({
       user: {
