@@ -1,11 +1,57 @@
 const express = require("express");
 const path = require("path");
 const fs = require("fs/promises");
+const createError = require("http-errors");
 
-const { User } = require("../../models/user");
+const { User, schemas } = require("../../models/user");
 const { authentication, upload } = require("../../middlewares");
+const { sendMail } = require("../../helpers");
 
 const router = express.Router();
+
+router.get("/verify/:verificationToken", async (req, res, next) => {
+  try {
+    const { verificationToken } = req.params;
+    const user = await User.findOne({ verificationToken });
+    if (!user) {
+      throw createError(404);
+    }
+    await User.findByIdAndUpdate(user._id, {
+      verify: true,
+      verificationToken: "",
+    });
+    res.json({ message: "Verification successful" });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/verify", async (req, res, next) => {
+  try {
+    const { error } = schemas.varify.validate(req.body);
+    if (error) {
+      throw createError(400, "missing required field email");
+    }
+
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (user.verify) {
+      throw createError(400, "Verification has already been passed");
+    }
+
+    const mail = {
+      to: email,
+      subject: "Підтвердіть email",
+      html: `<a target='_blank' href="http//localhost:3000/api/users/${user.verificationToken}">Підтвердіть адресу електронної пошти</a>`,
+    };
+    sendMail(mail);
+
+    res.json({ message: "Verification email sent" });
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get("/current", authentication, async (req, res, next) => {
   res.json({ email: req.user.email });
